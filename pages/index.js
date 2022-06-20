@@ -10,6 +10,28 @@ const usePrevious = value => {
   return ref.current;
 };
 
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: undefined,
+    height: undefined,
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleResize = () => {
+        setWindowSize({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      };
+      window.addEventListener("resize", handleResize);
+      handleResize();
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
+  return windowSize;
+};
+
 const navItems = [...Array(6)].map((_, key) => ['Item ' + (key + 1)]);
 
 export default function Home() {
@@ -17,6 +39,7 @@ export default function Home() {
   const prevActiveItem = usePrevious(activeItem);
   const [dropdownTransform, setDropdownTransform] = useState('');
   const dropdownRef = useRef(null);
+  const { width } = useWindowSize();
 
   const callbackArg = activeItem || prevActiveItem;
 
@@ -25,7 +48,7 @@ export default function Home() {
     const x = left - 10;
     const y = top + callbackArg.clientHeight + 2;
     setDropdownTransform(`translate3d(${x}px, ${y}px, 0px)`);
-  }, [callbackArg]);
+  }, [callbackArg, width]);
 
   const handleOutSideClick = useCallback(({ target }) => {
     if (!dropdownRef.current.contains(target) && !callbackArg.contains(target)) {
@@ -46,16 +69,16 @@ export default function Home() {
     if (activeItem) {
       getDropdownTransform(activeItem);
       document.addEventListener('scroll', getDropdownTransform, true);
-      document.addEventListener('resize', getDropdownTransform, true);
+      window.addEventListener('resize', getDropdownTransform, true);
       document.addEventListener('mousedown', handleOutSideClick, true);
     } else {
       document.removeEventListener('scroll', getDropdownTransform, true);
-      document.removeEventListener('resize', getDropdownTransform, true);
+      window.removeEventListener('resize', getDropdownTransform, true);
       document.removeEventListener('mousedown', handleOutSideClick, true);
     }
     return () => {
       document.removeEventListener('scroll', getDropdownTransform, true);
-      document.removeEventListener('resize', getDropdownTransform, true);
+      window.removeEventListener('resize', getDropdownTransform, true);
       document.removeEventListener('mousedown', handleOutSideClick, true);
     }
   }, [activeItem]);
